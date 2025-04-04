@@ -1,0 +1,94 @@
+<script>
+// Load data initially and set interval for auto-refresh
+document.addEventListener("DOMContentLoaded", function () {
+    loadData();
+    setInterval(loadData, 50000); // Refresh data every 5 seconds
+});
+
+function loadData() {
+    google.script.run.withSuccessHandler(showData).getData();
+}
+
+function showData(dataArray) {
+    if (!Array.isArray(dataArray) || dataArray.length === 0 || dataArray[0].length < 6) {
+        alert("Error: Data format is incorrect or no data available.");
+        return;
+    }
+
+    $(document).ready(function () {
+        dataArray.forEach(function (row) {
+            while (row.length < 6) {
+                row.push(null);
+            }
+        });
+
+        var table = $('#data-table').DataTable({
+            destroy: true,
+            data: dataArray,
+            columns: [
+                { "title": "Transaction ID" },
+                { "title": "Date" },
+                { "title": "Description" },
+                { "title": "Category" },
+                { "title": "Income" },
+                { "title": "Expenditure" }
+            ],
+            dom: 'Bfrtip',
+            buttons: [
+                { extend: 'copy', exportOptions: { columns: [0, 1, 2, 3, 4, 5] } },
+                { extend: 'csv', exportOptions: { columns: [0, 1, 2, 3, 4, 5] } },
+                { extend: 'excel', exportOptions: { columns: [0, 1, 2, 3, 4, 5] } },
+                { extend: 'pdf', exportOptions: { columns: [0, 1, 2, 3, 4, 5] } },
+                { extend: 'print', exportOptions: { columns: [0, 1, 2, 3, 4, 5] } }
+            ],
+            responsive: true,
+            paging: true,
+            searching: true,
+            ordering: true,
+            info: true,
+            lengthMenu: [[5, 10, 15, 20, 50, 100], [5, 10, 15, 20, 50, 100]],
+            pageLength: 10
+        });
+
+        updateTotalRow(dataArray);
+    });
+}
+
+function updateTotalRow(dataArray) {
+    let totalIncome = 0;
+    let totalExpenditure = 0;
+
+    for (let i = 0; i < dataArray.length; i++) {
+        let income = parseFloat(dataArray[i][4]) || 0;
+        let expenditure = parseFloat(dataArray[i][5]) || 0;
+
+        totalIncome += income;
+        totalExpenditure += expenditure;
+    }
+
+    var formattedIncome = formatCurrency(totalIncome);
+    var formattedExpenditure = formatCurrency(totalExpenditure);
+
+    $('#total-income').text(formattedIncome);
+    $('#total-expenditure').text(formattedExpenditure);
+}
+
+function formatCurrency(amount) {
+    return amount.toLocaleString("en-US", {
+        style: "currency",
+        currency: "TZS",
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    }).replace("TZS", " TZS");
+}
+
+function openPopup() {
+    document.getElementById("popup-overlay").style.display = "block";
+    document.getElementById("popup-form").style.display = "block";
+}
+
+function closePopup() {
+    document.getElementById("popup-overlay").style.display = "none";
+    document.getElementById("popup-form").style.display = "none";
+}
+</script>
